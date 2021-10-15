@@ -1,0 +1,15 @@
+[Unit]
+Description=BOX Antartic Service
+After=ntp.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/pi/antarctic/
+ExecStart=/home/pi/antarctic/sat_sub.py
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+Alias=antartic.service
