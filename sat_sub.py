@@ -39,16 +39,16 @@ class MoTPZ(rockBlockProtocol):
 		rb.close()
 
 	def rockBlockTxStarted(self):
-		logger.info("TxStarted")
-		print ("TxStarted")
+		logger.info("rockBlockTxStarted")
+		print ("rockBlockTxStarted")
 
 	def rockBlockTxFailed(self):
-		logger.warning("TxFailed")
-		print ("TxFailed")
+		logger.warning("rockBlockTxFailed")
+		print ("rockBlockTxFailed")
 
 	def rockBlockTxSuccess(self, momsn):
-		logger.info("TxSuccess")
-		print ("TxSuccess " + str(momsn))
+		logger.info("rockBlockTxSuccess")
+		print ("rockBlockTxSuccess " + str(momsn))
 
 
 # RockBlock MT
@@ -123,14 +123,14 @@ def commandMT(cmd):
 # Sensor data
 def sensor_data():
 	global json_data, string_data
-	json_data["ADC1"] = round(random.uniform(10.5, 15.5),2)		# random values for test
-	json_data["ADC2"] = round(random.uniform(20.5, 25.5),2)		# random values for test
-	json_data["ADC3"] = round(random.uniform(30.5, 35.5),2)		# random values for test
-	json_data["ADC4"] = round(random.uniform(10.5, 15.5),2)		# random values for test
-	json_data["ADC5"] = round(random.uniform(40.5, 43.5),2)		# random values for test
-	json_data["ADC6"] = round(random.uniform(70.5, 75.5),2)		# random values for test
-	json_data["ADC7"] = round(random.uniform(90.5, 95.5),2)		# random values for test
-	json_data["ADC8"] = round(random.uniform(10.5, 25.5),2)		# random values for test
+	json_data["ADC1"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC2"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC3"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC4"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC5"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC6"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC7"] = round(random.uniform(0, 15.0),2)		# random values for test
+	json_data["ADC8"] = round(random.uniform(0, 15.0),2)		# random values for test
 	#json_data["D1"] = random.randint(0, 1)
 	#json_data["D2"] = random.randint(0, 1)
 	#json_data["D3"] = random.randint(0, 1)
@@ -142,25 +142,28 @@ def sensor_data():
 
 	string_data = json.dumps(json_data, sort_keys=True)
 	logger.info(string_data)
-	print(string_data)
+	#print(string_data)
 
 
 # Start main thread
 if __name__ == '__main__':
-	tStart = time.time()
+	tStartMO = tStartMT = time.time()
 	while True:
-		# Receive MT
-		MtTPZ().main()
 
-		# Check elapsed time
+		# Check for MT
 		now = time.time()
-		elapsed_time = int(abs(now-tStart))
+		elapsed_time_MT = int(abs(now-tStartMT))
+                if(elapsed_time_MT > mt_time_interval):
+			MtTPZ().main()            # check MT
+			tStartMT = time.time()    # restart timer after MO is sent
 
 		# Update values and send MO
-		if(elapsed_time > mo_time_interval):
+		now = time.time()
+		elapsed_time_MO = int(abs(now-tStartMO))
+		if(elapsed_time_MO > mo_time_interval):
 			sensor_data()		# read sensor data
 			MoTPZ().main()		# send MO
-			tStart = time.time()	# restart timer after MO is sent
+			tStartMO = time.time()	# restart timer after MO is sent
 
 		# Sleep MT interval
-		time.sleep(mt_time_interval)
+		time.sleep(1)
