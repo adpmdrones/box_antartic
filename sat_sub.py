@@ -11,7 +11,13 @@ import rockBlock as rockBlock
 from rockBlock import rockBlockProtocol
 import json
 import time
+import os
+import threading
+from flask import Flask
+from flask_restful import Resource, Api, reqparse
+from flask_cors import CORS
 import random
+
 
 
 # Read and parse config.ini
@@ -21,8 +27,9 @@ sat_port = parser.get('params', 'sat_port')
 mo_time_interval = float(parser.get('params', 'mo_time'))
 mt_time_interval = float(parser.get('params', 'mt_time'))
 box_id = parser.get('params', 'box_id')
-json_data = {"BOXID":box_id, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":10.33, "ADC2":45.78, "ADC3":22.19, "ADC4":93.23, "ADC5":18.45, "ADC6":39.53, "ADC7":67.69, "ADC8":11.554, "D1":1, "D2":1,"D3":0, "D4":1, "D5":0, "D6":0, "D7":0, "D8":1}
+json_data = {"BOXID":box_id, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
+reset = 0
 
 
 # Create logger
@@ -67,54 +74,48 @@ class MtTPZ(rockBlockProtocol):
 		print "rockBlockRxFailed"
 
 	def rockBlockRxReceived(self,mtmsn,data):
-		logger.info("rockBlockRxReceived " + str(mtmsn) + " " + data)
+		logger.info("rockBlockRxReceived " + data)
 		print "rockBlockRxReceived " + str(mtmsn) + " " + data
-		commandMT(data)
+		cmd = json.loads(data)
+		commandMT(cmd)
 
 	def rockBlockRxMessageQueue(self,count):
-		#logger.info("rockBlockRxMessageQueue " + str(count))
-		#print "rockBlockRxMessageQueue " + str(count)
 		pass
 
 
-# Command to DO
-def commandMT(cmd):
-	global json_data, mo_time_interval, mt_time_interval
-	cmd_json = json.loads(cmd)
+# Command
+def commandMT(cmd_json):
+	global json_data, mo_time_interval, mt_time_interval, reset
 	cmd_list_keys = list(cmd_json)
 	cmd_list_values = list(cmd_json.values())
 
 	# Update json data (DO values are read from sensors?)
-	for x in range(len(cmd_json)):
-		try:
-			index = cmd_list_keys[x]
-			value = cmd_list_values[x]
-			json_data[index] = value
-		except:
-			logger.warning("Bad command")
-			print("Bad command")
+	param = cmd_list_keys[0]
+	value = cmd_list_values[0]
 
-	# Send command to digital outputs (if in cmd)
-
-
-	# Change sample time (if in cmd)
-	if mo_time_interval==json_data["sampleMO"]:
-		pass
+	# Check for reset command
+	if param == "reset":
+		#os.system('reboot')
+		reset = 1
 	else:
+		json_data[param] = value
+
+	# Check for digital output command
+	if param[0] == "D":
+		pass
+		#setPin(command, value)
+
+	# Change for change sample time command (MO)
+	if param == "sampleMO":
 		logger.info("Change MO sample time")
-		print("Change MO sample time")
-		mo_time_interval = json_data["sampleMO"]
-		parser.set('params', 'mo_time', str(mo_time_interval))
+		parser.set('params', 'mo_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
-	if mt_time_interval==json_data["sampleMT"]:
-		pass
-	else:
+	# Change for change sample time command (MT)
+	if param == "sampleMT":
 		logger.info("Change MT sample time")
-		print("Change MT sample time")
-		mt_time_interval = json_data["sampleMT"]
-		parser.set('params', 'mt_time', str(mt_time_interval))
+		parser.set('params', 'mt_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
@@ -131,39 +132,76 @@ def sensor_data():
 	json_data["ADC6"] = round(random.uniform(0, 15.0),2)		# random values for test
 	json_data["ADC7"] = round(random.uniform(0, 15.0),2)		# random values for test
 	json_data["ADC8"] = round(random.uniform(0, 15.0),2)		# random values for test
-	#json_data["D1"] = random.randint(0, 1)
-	#json_data["D2"] = random.randint(0, 1)
-	#json_data["D3"] = random.randint(0, 1)
-	#json_data["D4"] = random.randint(0, 1)
-	#json_data["D5"] = random.randint(0, 1)
-	#json_data["D6"] = random.randint(0, 1)
-	#json_data["D7"] = random.randint(0, 1)
-	#json_data["D8"] = random.randint(0, 1)
+	#json_data["DX"] = random.randint(0, 1)
 
 	string_data = json.dumps(json_data, sort_keys=True)
 	logger.info(string_data)
 	#print(string_data)
 
 
-# Start main thread
-if __name__ == '__main__':
+def box_thread():
 	tStartMO = tStartMT = time.time()
 	while True:
+
+		# Reset
+		if reset:
+			time.sleep(1)
+			os.system('reboot')
 
 		# Check for MT
 		now = time.time()
 		elapsed_time_MT = int(abs(now-tStartMT))
-                if(elapsed_time_MT > mt_time_interval):
-			MtTPZ().main()            # check MT
-			tStartMT = time.time()    # restart timer after MO is sent
+		if(elapsed_time_MT > mt_time_interval):
+			MtTPZ().main()                          # check MT
+			tStartMT = time.time()                  # restart timer after MT check
 
 		# Update values and send MO
 		now = time.time()
 		elapsed_time_MO = int(abs(now-tStartMO))
 		if(elapsed_time_MO > mo_time_interval):
-			sensor_data()		# read sensor data
-			MoTPZ().main()		# send MO
-			tStartMO = time.time()	# restart timer after MO is sent
+			sensor_data()                           # read sensor data
+			MoTPZ().main()                          # send MO
+			tStartMO = time.time()                  # restart timer after MO is sent
 
-		# Sleep MT interval
+		# Sleep interval
 		time.sleep(1)
+
+
+
+# API Class Box
+class Box(Resource):
+	def get(self):
+		sensor_data()
+		return {"boxdata" : json_data}, 200
+
+
+	def post(self):
+		parser = reqparse.RequestParser()
+		parser.add_argument('parameter', type=str, required=True)
+		parser.add_argument('value', type=int, required=True)
+		args = parser.parse_args()
+		param = args.parameter
+		value = args.value
+		command = {param: value}
+		commandMT(command)
+		return {}, 200
+
+
+
+# Start main thread
+if __name__ == '__main__':
+
+	# Start box thread
+	boxThread = threading.Thread(target=box_thread)
+	boxThread.daemon = True
+	boxThread.start()
+
+	# Define REST API
+	app = Flask(__name__)
+	api = Api(app)
+	cors = CORS(app)
+	api.add_resource(Box, '/box')
+	log = logging.getLogger('werkzeug')
+	log.disabled = True
+	app.run(host='0.0.0.0', port=5000)
+
