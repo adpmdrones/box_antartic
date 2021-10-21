@@ -17,7 +17,7 @@ from flask import Flask
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS
 import random
-
+import adc
 
 
 # Read and parse config.ini
@@ -29,6 +29,7 @@ mt_time_interval = float(parser.get('params', 'mt_time'))
 box_id = parser.get('params', 'box_id')
 json_data = {"BOXID":box_id, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
+ir_status = 0
 reset = 0
 
 
@@ -95,7 +96,6 @@ def commandMT(cmd_json):
 
 	# Check for reset command
 	if param == "reset":
-		#os.system('reboot')
 		reset = 1
 	else:
 		json_data[param] = value
@@ -124,23 +124,25 @@ def commandMT(cmd_json):
 # Sensor data
 def sensor_data():
 	global json_data, string_data
-	json_data["ADC1"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC2"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC3"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC4"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC5"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC6"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC7"] = round(random.uniform(0, 15.0),2)		# random values for test
-	json_data["ADC8"] = round(random.uniform(0, 15.0),2)		# random values for test
+	values = adc.read_adc()
+	json_data["ADC1"] = values[1]
+	json_data["ADC2"] = values[2]
+	json_data["ADC3"] = values[3]
+	json_data["ADC4"] = values[4]
+	json_data["ADC5"] = values[5]
+	json_data["ADC6"] = values[6]
+	json_data["ADC7"] = values[7]
+	json_data["ADC8"] = values[8]
 	#json_data["DX"] = random.randint(0, 1)
 
 	string_data = json.dumps(json_data, sort_keys=True)
 	logger.info(string_data)
-	#print(string_data)
 
 
 def box_thread():
-	tStartMO = tStartMT = time.time()
+	global ir_status
+	tStartMO = time.time() - mo_time_interval	# force 1st MO (and sensor read)
+	tStartMT = time.time() - mt_time_interval	# force 1st MT
 	while True:
 
 		# Reset
@@ -151,16 +153,26 @@ def box_thread():
 		# Check for MT
 		now = time.time()
 		elapsed_time_MT = int(abs(now-tStartMT))
-		if(elapsed_time_MT > mt_time_interval):
-			MtTPZ().main()                          # check MT
+		if(elapsed_time_MT >= mt_time_interval):
+			try:
+				MtTPZ().main()                  # check MT
+				ir_status = 1
+			except:
+				logger.error("Iridium not connected")
+				ir_status = 0
 			tStartMT = time.time()                  # restart timer after MT check
 
 		# Update values and send MO
 		now = time.time()
 		elapsed_time_MO = int(abs(now-tStartMO))
-		if(elapsed_time_MO > mo_time_interval):
+		if(elapsed_time_MO >= mo_time_interval):
 			sensor_data()                           # read sensor data
-			MoTPZ().main()                          # send MO
+			try:
+				MoTPZ().main()                  # send MO
+				ir_status = 1
+			except:
+				logger.error("Iridium not connected")
+				ir_status = 0
 			tStartMO = time.time()                  # restart timer after MO is sent
 
 		# Sleep interval
@@ -171,7 +183,7 @@ def box_thread():
 # API Class Box
 class Box(Resource):
 	def get(self):
-		sensor_data()
+		json_data["status_iridium"] = ir_status
 		return {"boxdata" : json_data}, 200
 
 
