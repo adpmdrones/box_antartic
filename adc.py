@@ -8,8 +8,15 @@ import RPi.GPIO as GPIO
 
 REF = 5.08          # Modify according to actual voltage external AVDD and AVSS(Default), or internal 2.5V
 ADC = ADS1263.ADS1263()
-if (ADC.ADS1263_init() == -1):
-    exit()
+
+def init_adc():
+    try:
+        if (ADC.ADS1263_init() == -1):
+            return 0
+        else:
+            return 1
+    except:
+        return 0
 
 
 def read_adc():

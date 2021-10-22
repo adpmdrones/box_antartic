@@ -27,9 +27,10 @@ sat_port = parser.get('params', 'sat_port')
 mo_time_interval = float(parser.get('params', 'mo_time'))
 mt_time_interval = float(parser.get('params', 'mt_time'))
 box_id = parser.get('params', 'box_id')
-json_data = {"BOXID":box_id, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
+json_data = {"BOXID":box_id, "ADC_status": 0, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
 ir_status = 0
+adc_status = 0
 reset = 0
 
 
@@ -124,23 +125,34 @@ def commandMT(cmd_json):
 # Sensor data
 def sensor_data():
 	global json_data, string_data
-	values = adc.read_adc()
-	json_data["ADC1"] = values[1]
-	json_data["ADC2"] = values[2]
-	json_data["ADC3"] = values[3]
-	json_data["ADC4"] = values[4]
-	json_data["ADC5"] = values[5]
-	json_data["ADC6"] = values[6]
-	json_data["ADC7"] = values[7]
-	json_data["ADC8"] = values[8]
+
+	# Read ADC
+	if adc_status:
+		values = adc.read_adc()
+		json_data["ADC1"] = values[1]
+		json_data["ADC2"] = values[2]
+		json_data["ADC3"] = values[3]
+		json_data["ADC4"] = values[4]
+		json_data["ADC5"] = values[5]
+		json_data["ADC6"] = values[6]
+		json_data["ADC7"] = values[7]
+		json_data["ADC8"] = values[8]
+		json_data["ADC_status"] = 1
+	else:
+		json_data["ADC_status"] = 0
+		logger.warning("ADC bad status")
+
 	#json_data["DX"] = random.randint(0, 1)
 
 	string_data = json.dumps(json_data, sort_keys=True)
 	logger.info(string_data)
 
 
+
+# BOX thread
 def box_thread():
-	global ir_status
+	global ir_status, adc_status
+	adc_status = adc.init_adc()			# init ADC
 	tStartMO = time.time() - mo_time_interval	# force 1st MO (and sensor read)
 	tStartMT = time.time() - mt_time_interval	# force 1st MT
 	while True:
@@ -166,7 +178,7 @@ def box_thread():
 		now = time.time()
 		elapsed_time_MO = int(abs(now-tStartMO))
 		if(elapsed_time_MO >= mo_time_interval):
-			sensor_data()                           # read sensor data
+			sensor_data()                   # read sensor data
 			try:
 				MoTPZ().main()                  # send MO
 				ir_status = 1
