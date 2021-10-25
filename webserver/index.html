@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>ENEA Box</title>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="//code.jquery.com/jquery-1.7.2.min.js"></script>
+        <link href="//cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <script src="//cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+        <script src="//cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js" crossorigin="anonymous"></script>
+        <link href="assets/css/styles.css" rel="stylesheet" />
+	<link href="https://vjs.zencdn.net/7.2.3/video-js.css" rel="stylesheet">
+        <link rel="icon" type="image/png" href="assets/img/logo-adpm-drone.png"/>
+    </head>
+    <body class="sb-nav-fixed">
+        <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+            <!-- Navbar Brand-->
+            <a class="navbar-brand ps-3" href="index.html">
+                <img src="assets/img/logo-adpm-drone.png" title="ADPM Drones" alt="ADPM Drones" style="max-height: 75px;"> TPZ ENEA
+            </a>
+            <!-- Sidebar Toggle-->
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
+        </nav>
+        <div id="layoutSidenav">
+            <div id="layoutSidenav_nav">
+                <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                    <div class="sb-sidenav-menu">
+                        <div class="nav">
+                            <div class="sb-sidenav-menu-heading">IRIDIUM <button id="irstate" class="dot"></button></div>
+                            <a class="nav-link" href="#" id="motime" data-bs-toggle="collapse" data-bs-target="#collapseMO" aria-expanded="false" aria-controls="collapseMO">
+                                <div class="sb-nav-link-icon"><i class="fas fa-lock-open"></i></div> MO
+				<div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+			    <div class="collapse p-3" id="collapseMO" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="mo">Time</label>
+                                        <input id="mo" type="number" step="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="mo_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+			    <a class="nav-link" href="#" id="mttime" data-bs-toggle="collapse" data-bs-target="#collapseMT" aria-expanded="false" aria-controls="collapseMT">
+                                <div class="sb-nav-link-icon"><i class="fas fa-lock-open"></i></div> MT
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapseMT" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="mt">Time</label>
+                                        <input id="mt" type="number" step="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="mt_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+			    <div class="sb-sidenav-menu-heading">ADC <button id="adcstate" class="dot"></button></div>
+
+
+                            <div class="sb-sidenav-menu-heading">GPIO <button id="dstate" class="dot"></div>
+                            <a class="nav-link collapsed" href="#" id="gpio1" data-bs-toggle="collapse" data-bs-target="#collapsegpio1" aria-expanded="false" aria-controls="collapsegpio1">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO1
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio1" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val1">Value</label>
+                                        <input id="val1" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio1_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+			    <a class="nav-link collapsed" href="#" id="gpio2" data-bs-toggle="collapse" data-bs-target="#collapsegpio2" aria-expanded="false" aria-controls="collapsegpio2">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO2
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio2" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val2">Value</label>
+                                        <input id="val2" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio2_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+			    <a class="nav-link collapsed" href="#" id="gpio3" data-bs-toggle="collapse" data-bs-target="#collapsegpio3" aria-expanded="false" aria-controls="collapsegpio3">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO3
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio3" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val3">Value</label>
+                                        <input id="val3" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio3_go" class="btn btn-success mt-3 w-100">SET</button>                            
+			    </div>
+
+
+			    <a class="nav-link collapsed" href="#" id="gpio4" data-bs-toggle="collapse" data-bs-target="#collapsegpio4" aria-expanded="false" aria-controls="collapsegpio4">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO4
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio4" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val4">Value</label>
+                                        <input id="val4" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio4_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+			    <a class="nav-link collapsed" href="#" id="gpio5" data-bs-toggle="collapse" data-bs-target="#collapsegpio5" aria-expanded="false" aria-controls="collapsegpio5">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO5
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio5" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val5">Value</label>
+                                        <input id="val5" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio5_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+                            <a class="nav-link collapsed" href="#" id="gpio6" data-bs-toggle="collapse" data-bs-target="#collapsegpio6" aria-expanded="false" aria-controls="collapsegpio6">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO6
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio6" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val6">Value</label>
+                                        <input id="val6" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio6_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+                            <a class="nav-link collapsed" href="#" id="gpio7" data-bs-toggle="collapse" data-bs-target="#collapsegpio7" aria-expanded="false" aria-controls="collapsegpio7">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO7
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio7" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val7">Value</label>
+                                        <input id="val7" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio7_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+                            <a class="nav-link collapsed" href="#" id="gpio8" data-bs-toggle="collapse" data-bs-target="#collapsegpio8" aria-expanded="false" aria-controls="collapsegpio8">
+                                <div class="sb-nav-link-icon"><i class="fas fa-map-marker"></i></div> GPIO8
+                                <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                            </a>
+                            <div class="collapse p-3" id="collapsegpio8" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                                <form>
+                                    <div class="form-group">
+                                        <label for="val8">Value</label>
+                                        <input id="val8" type="number" step="1" min="0" max="1" class="form-control" >
+                                    </div>
+                                </form>
+                                <button id="gpio8_go" class="btn btn-success mt-3 w-100">SET</button>
+                            </div>
+
+
+
+                            <div class="sb-sidenav-menu-heading">BOX <button id="boxstate" class="dot"></button></div>
+			    <a class="nav-link" href="#" id="reset">
+                                <div class="sb-nav-link-icon"><i class="fas fa-plane"></i></div> RESET
+                            </a>
+
+                        </div>
+                    </div>
+                </nav>
+            </div>
+            <div id="layoutSidenav_content">
+                <main>
+                    <div class="container-fluid px-4">
+                        <h1 class="mt-4">Dashboard</h1>
+                        <div class="row">
+                            <div class="col-xl-8">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-map-marked"></i>
+                                        BOX
+                                    </div>
+                                    <div class="card-body">
+					<img src="antartic.jpg" alt="Trulli" width="1050" height="500">
+                                    </div>
+                                </div>
+
+
+				 <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-cloud-sun"></i>
+                                        IRIDIUM
+                                    </div>
+                                    <div class="card-body">
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:1px;">MO time (s):   <span style="font-family:'Helvetica'; float:right;"  id="moget"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:0px;">MT time (s):   <span style="font-family:'Helvetica'; float:right;"  id="mtget"></span></p>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+
+
+                            <div class="col-xl-4">
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-video"></i>
+                                        GPIO
+                                    </div>
+                                    <div class="card-body">
+
+					<p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO1:         <span style="font-family:'Helvetica'; float:right;"  id="g1"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO2:         <span style="font-family:'Helvetica'; float:right;"  id="g2"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO3:         <span style="font-family:'Helvetica'; float:right;"  id="g3"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO4:         <span style="font-family:'Helvetica'; float:right;"  id="g4"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO5:         <span style="font-family:'Helvetica'; float:right;"  id="g5"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO6:         <span style="font-family:'Helvetica'; float:right;"  id="g6"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO7:         <span style="font-family:'Helvetica'; float:right;"  id="g7"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">GPIO8:         <span style="font-family:'Helvetica'; float:right;"  id="g8"></span></p>
+                                          
+                                    </div>
+                                </div>
+
+                                <div class="card mb-4">
+                                    <div class="card-header">
+                                        <i class="fas fa-plane-departure"></i>
+                                        ADC
+                                    </div>
+                                    <div class="card-body">
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC1:         <span style="font-family:'Helvetica'; float:right;"  id="a1"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC2:         <span style="font-family:'Helvetica'; float:right;"  id="a2"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC3:  	    <span style="font-family:'Helvetica'; float:right;"  id="a3"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC4:         <span style="font-family:'Helvetica'; float:right;"  id="a4"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC5:         <span style="font-family:'Helvetica'; float:right;"  id="a5"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC6:         <span style="font-family:'Helvetica'; float:right;"  id="a6"></span></p>
+                                        <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC7:         <span style="font-family:'Helvetica'; float:right;"  id="a7"></span></p>
+					<p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC8:         <span style="font-family:'Helvetica'; float:right;"  id="a8"></span></p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </main>
+                <footer class="py-4 bg-light mt-auto">
+                    <div class="container-fluid px-4">
+                        <div class="d-flex align-items-center justify-content-between small">
+                            <div class="text-muted">Copyright &copy; 2021 ADPM Drones S.R.L. - Telespazio S.P.A.</div>
+                            <div>
+                                <a href="#">Privacy Policy</a>
+                                &middot;
+                                <a href="#">Terms &amp; Conditions</a>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div>
+        </div>
+        <script src="//polyfill.io/v3/polyfill.min.js?features=default"></script>
+        <script src="//maps.googleapis.com/maps/api/js?key=AIzaSyApb4PwYvzURz52DvlnaLuKQ40NscV5o00&libraries=&v=weekly" async></script>
+        <script id='player_embed' src='//player.cloud.wowza.com/hosted/tpvbwp4z/wowza.js' type='text/javascript'></script>
+	<script src="https://vjs.zencdn.net/ie8/ie8-version/videojs-ie8.min.js"></script>
+    	<script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-hls/5.14.1/videojs-contrib-hls.js"></script>
+    	<script src="https://vjs.zencdn.net/7.2.3/video.js"></script>
+        <script src="assets/js/homeScript.js"></script>
+    </body>
+</html>

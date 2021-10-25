@@ -1,0 +1,581 @@
+
+(function ($, window, document) {
+
+    class HomeScript{
+        constructor() {
+            this.debug = false;
+            this.urlBox = this.debug ? "":"http://127.0.0.1:5000/box";
+            //$.map = new MapBuild(this.urlBox);
+            this.eventPage();
+        }
+
+        eventPage(){
+            let that = this;
+            window.addEventListener('DOMContentLoaded', event => {
+                const sidebarToggle = document.body.querySelector('#sidebarToggle');
+                if (sidebarToggle) {
+                    sidebarToggle.addEventListener('click', event => {
+                        event.preventDefault();
+                        document.body.classList.toggle('sb-sidenav-toggled');
+                        localStorage.setItem('sb|sidebar-toggle', document.body.classList.contains('sb-sidenav-toggled'));
+                    });
+                }
+            });
+
+            document.getElementById("a1").innerHTML = 0;
+	    document.getElementById("a2").innerHTML = 0;
+	    document.getElementById("a3").innerHTML = 0;
+	    document.getElementById("a4").innerHTML = 0;
+	    document.getElementById("a5").innerHTML = 0;
+	    document.getElementById("a6").innerHTML = 0;
+	    document.getElementById("a7").innerHTML = 0;
+	    document.getElementById("a8").innerHTML = 0;
+            document.getElementById("g1").innerHTML = 0;
+	    document.getElementById("g2").innerHTML = 0;
+	    document.getElementById("g3").innerHTML = 0;
+	    document.getElementById("g4").innerHTML = 0;
+	    document.getElementById("g5").innerHTML = 0;
+	    document.getElementById("g6").innerHTML = 0;
+	    document.getElementById("g7").innerHTML = 0;
+	    document.getElementById("g8").innerHTML = 0;
+            document.getElementById("moget").innerHTML = 0;
+            document.getElementById("mtget").innerHTML = 0;
+
+            document.getElementById("gpio1_go").onclick = function() {that.gpio1_action()};
+	    document.getElementById("gpio2_go").onclick = function() {that.gpio2_action()};
+	    document.getElementById("gpio3_go").onclick = function() {that.gpio3_action()};
+	    document.getElementById("gpio4_go").onclick = function() {that.gpio4_action()};
+	    document.getElementById("gpio5_go").onclick = function() {that.gpio5_action()};
+	    document.getElementById("gpio6_go").onclick = function() {that.gpio6_action()};
+	    document.getElementById("gpio7_go").onclick = function() {that.gpio7_action()};
+	    document.getElementById("gpio8_go").onclick = function() {that.gpio8_action()};
+
+	    document.getElementById("mo_go").onclick = function() {that.mo_action()};
+	    document.getElementById("mt_go").onclick = function() {that.mt_action()};
+	    document.getElementById("reset").onclick = function() {that.reset()};
+
+        }
+
+
+        gpio1_action() {
+            var val = document.getElementById("val1").value;
+
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlBox, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"parameter": "D1", "value": val});
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+            http.send(data);
+
+        }
+
+        mission() {
+            $.map.mission_mode();
+        }
+
+        mission_start() {
+            document.getElementById("mission_go").innerHTML = "CONTINUE";
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "mission", "uav_id": 1, "system": "drone"});
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+            http.send(data);
+        }
+
+        mission_load() {
+	    document.getElementById("mission_go").innerHTML = "START";
+            var mission_points = $.map.get_mission_points();
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "loadmission", "uav_id": 1, "speed":5, "nadir":"true", "system": "drone", "points": mission_points});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+          }
+
+
+        rth() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "rth", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+        loiter() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "loiter", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+        land() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "abort", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+        pan() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "pan", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+        tilt() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "tilt", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+        reset() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "reset", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+	photo() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "photo", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+	startvideo() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "startvideo", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+
+	stopvideo() {
+            var http = new XMLHttpRequest();
+            http.open("POST", this.urlDroneCommands, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"cmd": "stopvideo", "uav_id": 1, "system": "drone"});
+
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+
+            http.send(data);
+        }
+    }
+
+    class MapBuild {
+        constructor(urlDroneTracking, urlHangarTracking) {
+            this.map;
+            this.urlDroneTracking = urlDroneTracking;
+            this.urlHangarTracking = urlHangarTracking;
+            this.markers = [];
+            this.goto_point;
+            this.drone_lat = 41.931967;
+            this.drone_lng = 12.631724;
+            this.altitude = 0;
+            this.heading = 0;
+            this.battery = 0;
+            this.mode = "GUIDED";
+            this.armed = "false";
+            this.markYN = 1;
+            this.centre = 0;
+            this.mission_en = 0;
+	    this.hanServerTicksOff = 0;
+	    this.droServerTicksOff = 0;
+            this.initMap();
+        }
+
+        initMap() {
+            let that = this;
+            // The location of ADPM HQ
+            const adpm = {lat: 41.931967, lng: 12.631724};
+
+            // The map, centered at ADPM HQ
+            this.map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 20,
+                tilt: 0,
+                disableDoubleClickZoom: true,
+                mapTypeId: google.maps.MapTypeId.SATELLITE,
+                center: adpm,
+            });
+
+            // Drone marker
+            this.marker_pos = new google.maps.Marker({position: adpm, map: this.map});
+
+            // Hangar marker
+            const image = "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png";
+            this.marker_han = new google.maps.Marker({position: adpm,
+                                                      map: this.map,
+						      icon: image,
+						      label: {
+                                                        text: " ",
+                                                        fontWeight: "bold"
+                                                      }});
+
+            // This event listener will call addMarker() when the map is clicked.
+            this.map.addListener("rightclick", (event) => {
+                this.centre = !this.centre;
+            });
+            this.map.addListener("click", (event) => {
+              if(this.mission_en == 0){
+                  if (that.markYN == 1) {
+                      that.markYN = 0;
+                      that.addMarker(event.latLng);
+                      that.goto_point = event.latLng;
+                  } else {
+                      that.markYN = 1;
+                      that.deleteMarkers();
+                  }
+              }
+              else{
+                  that.addMarkerMission(event.latLng);
+              }
+            });
+
+            // Update position
+            setInterval(function(){that.update_uav_pos();}, 500);
+            setInterval(function(){that.update_hang_state();}, 500);
+	    that.update_meteo_state();
+            setInterval(function(){that.update_meteo_state();}, 60000);
+        }
+
+
+        addMarker(location) {
+            var square = {
+                path: 'M -2,-2 2,-2 2,2 -2,2 z', // 'M -2,0 0,-2 2,0 0,2 z',
+                strokeColor: '#000000',
+                strokeWeight: 2,
+                fillColor: '#66ff66',
+                fillOpacity: 1,
+                scale: 5
+            };
+
+            const marker = new google.maps.Marker({
+                position: location,
+                map: this.map,
+                icon: square,
+                label: {
+                    text: "X",
+                    fontWeight: "bold"
+                }
+            });
+            this.markers.push(marker);
+        }
+
+        addMarkerMission(location) {
+            var num = this.markers.length + 1;
+            var n = num.toString();
+
+            var square = {
+              path: 'M -2,-2 2,-2 2,2 -2,2 z', // 'M -2,0 0,-2 2,0 0,2 z',
+              strokeColor: '#000000',
+              strokeWeight: 2,
+              fillColor: '#66ff66',
+              fillOpacity: 1,
+              scale: 5
+            };
+            const marker = new google.maps.Marker({
+              position: location,
+              map: this.map,
+              icon: square,
+              label: {
+              text: n,
+              fontWeight: "bold"
+              }
+            });
+
+            this.markers.push(marker);
+        }
+
+
+        // Sets the map on all markers in the array.
+        setMapOnAll(map) {
+            for (let i = 0; i < this.markers.length; i++) {
+                this.markers[i].setMap(map);
+            }
+        }
+
+        // Removes the markers from the map, but keeps them in the array.
+        clearMarkers() {
+            this.setMapOnAll(null);
+        }
+
+        // Deletes all markers in the array by removing references to them.
+        deleteMarkers() {
+            this.clearMarkers();
+            this.markers = [];
+        }
+
+        // Get Drone Position
+        update_uav_pos() {
+            let that = this;
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function () {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+                    var resp = xmlHttp.responseText;
+                    var json = JSON.parse(resp);
+		    status = json[0].status;
+                    that.drone_lat = json[0].lat;
+                    that.drone_lng = json[0].lng;
+                    that.altitude = json[0].old;
+                    that.heading = json[0].heading;
+                    that.battery = json[0].batteryRemainingPercent;
+                    that.mode = json[0].mode;
+                    that.armed = json[0].armed;
+
+		    that.droServerTicksOff = 0;
+
+                    if(status == "on")
+                    	document.getElementById("dstate").style.backgroundColor = "green";
+		    else
+			document.getElementById("dstate").style.backgroundColor = "red";
+
+                    document.getElementById("latitude").innerHTML = that.drone_lat.toString();
+                    document.getElementById("longitude").innerHTML = that.drone_lng.toString();
+                    document.getElementById("altitude").innerHTML = that.altitude.toString();
+                    document.getElementById("heading").innerHTML = that.heading.toString();
+                    document.getElementById("battery").innerHTML = that.battery.toString();
+                    document.getElementById("mode").innerHTML = that.mode;
+                    document.getElementById("armed").innerHTML = that.armed;
+
+                    that.han_lat = json[0].home_lat;
+                    that.han_lng = json[0].home_lng;
+                    that.marker_pos.setPosition(new google.maps.LatLng(that.drone_lat, that.drone_lng));
+                    that.marker_han.setPosition( new google.maps.LatLng( that.han_lat, that.han_lng ) );
+                    if(that.centre)
+                        that.map.panTo( new google.maps.LatLng( that.drone_lat, that.drone_lng ) );
+                }
+                else{
+		   that.droServerTicksOff += 1;
+                   if(that.droServerTicksOff >= 15){
+                       document.getElementById("dstate").style.backgroundColor = "gray";
+		       document.getElementById("latitude").innerHTML = 0;
+                       document.getElementById("longitude").innerHTML = 0;
+                       document.getElementById("altitude").innerHTML = 0;
+                       document.getElementById("heading").innerHTML = 0;
+                       document.getElementById("battery").innerHTML = 0;
+                       document.getElementById("mode").innerHTML = "OFF";
+                       document.getElementById("armed").innerHTML = "false";
+		   }
+                }
+	    }
+            xmlHttp.open("GET", this.urlDroneTracking, true);
+            xmlHttp.send(null);
+
+        }
+
+
+        update_hang_state() {
+            let that = this;
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            	{
+                    var resp = xmlHttp.responseText;
+                    var json = JSON.parse(resp);
+                    var hang = json[0].hangarIs;
+                    var endis = json[0].hangarEnable;
+                    var status = json[0].status;
+                    if(endis == "True"){
+                        that.hanServerTicksOff = 0;
+                        if(hang=="open" || hang=="opening")
+                            document.getElementById("state").style.backgroundColor = "green";
+                        else
+                            document.getElementById("state").style.backgroundColor = "red";
+
+                        if(hang=="closing" || hang=="opening")
+			    setTimeout(function() {document.getElementById("state").style.backgroundColor = "gray";}, 250);
+                    }
+                    else
+                        document.getElementById("state").style.backgroundColor = "gray";
+                }
+                else {
+                    that.hanServerTicksOff += 1;
+                    if (that.hanServerTicksOff >= 15)
+                        document.getElementById("state").style.backgroundColor = "gray";
+		}
+            }
+            xmlHttp.open("GET", this.urlHangarTracking, true);
+            xmlHttp.send(null);
+        }
+
+
+	update_meteo_state() {
+            let that = this;
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                {
+                    var resp = xmlHttp.responseText;
+                    var json = JSON.parse(resp);
+                    var temp = json.main.temp;
+                    var wind = json.wind.speed;
+                    document.getElementById("temp").innerHTML = temp;
+                    document.getElementById("wind").innerHTML = wind;
+                }
+            }
+            xmlHttp.open("GET", "https://api.openweathermap.org/data/2.5/weather?lat=" + that.drone_lat + "&lon=" + that.drone_lng + "&units=metric&appid=7bcad1b60742efea7aa3f800b2daf0f7", true);
+	    xmlHttp.send(null);
+        }
+
+
+        up_goto_pos(gt_lat, gt_lng) {
+            this.markers[0].setPosition( new google.maps.LatLng( gt_lat, gt_lng ) );
+        }
+
+        get_goto_lat() {
+            return this.goto_point.lat();
+        }
+
+        get_goto_lon() {
+            return this.goto_point.lng();
+        }
+
+        get_curr_lat() {
+            return this.drone_lat;
+        }
+
+        get_curr_lon() {
+            return this.drone_lng;
+        }
+
+        mission_mode() {
+            if(this.mission_en == 0){
+                this.mission_en = 1;
+                this.deleteMarkers();
+            }
+            else {
+                this.mission_en = 0;
+                this.deleteMarkers();
+                this.markYN = 1;
+            }
+        }
+
+        get_mission_points(){
+            var coord = [];
+            for (let i = 0; i < this.markers.length; i++) {
+                var dict = {};
+                var mlat = this.markers[i].getPosition().lat();
+                var mlng = this.markers[i].getPosition().lng();
+                dict["lat"] = mlat;
+                dict["lon"] = mlng;
+                dict["alt"] = 25;
+		dict["heading"] = 250;
+		dict["flag"] = "true";
+                coord[i] = dict;
+            }
+            return coord;
+        }
+
+    }
+
+    $.homeScript = new HomeScript();
+
+}(jQuery, window, document));
+

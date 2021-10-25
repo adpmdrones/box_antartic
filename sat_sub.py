@@ -16,7 +16,7 @@ import threading
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS
-import random
+import serial
 import adc
 
 
@@ -27,11 +27,10 @@ sat_port = parser.get('params', 'sat_port')
 mo_time_interval = float(parser.get('params', 'mo_time'))
 mt_time_interval = float(parser.get('params', 'mt_time'))
 box_id = parser.get('params', 'box_id')
-json_data = {"BOXID":box_id, "ADC_status": 0, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
+ir_status = -1
+adc_status = -1
+json_data = {"BOXID":box_id, "ADC_status":adc_status, "status_iridium":ir_status, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
-ir_status = 0
-adc_status = 0
-reset = 0
 
 
 # Create logger
@@ -97,34 +96,46 @@ def commandMT(cmd_json):
 
 	# Check for reset command
 	if param == "reset":
-		reset = 1
-	else:
-		json_data[param] = value
+		os.system('reboot')
 
 	# Check for digital output command
-	if param[0] == "D":
-		pass
+	elif param[0] == "D":
+		json_data[param] = min(value,1)
 		#setPin(command, value)
 
 	# Change for change sample time command (MO)
-	if param == "sampleMO":
+	elif param == "sampleMO":
+		json_data[param] = value
 		logger.info("Change MO sample time")
 		parser.set('params', 'mo_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
 	# Change for change sample time command (MT)
-	if param == "sampleMT":
+	elif param == "sampleMT":
+		json_data[param] = value
 		logger.info("Change MT sample time")
 		parser.set('params', 'mt_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
 
+# Check Iridium state at boot
+def check_iridium():
+	global ir_status
+	try:
+		rockBlock.rockBlock(sat_port, self)
+		ir_status = 1
+	except:
+		ir_status = 0
+
 
 # Sensor data
 def sensor_data():
 	global json_data, string_data
+
+	# Iridium state
+	json_data["status_iridium"] = ir_status
 
 	# Read ADC
 	if adc_status:
@@ -152,15 +163,11 @@ def sensor_data():
 # BOX thread
 def box_thread():
 	global ir_status, adc_status
+	check_iridium()                                 # check Iridium
 	adc_status = adc.init_adc()			# init ADC
-	tStartMO = time.time() - mo_time_interval	# force 1st MO (and sensor read)
-	tStartMT = time.time() - mt_time_interval	# force 1st MT
+	sensor_data()					# check data
+	tStartMO = tStartMT = 0				# timer
 	while True:
-
-		# Reset
-		if reset:
-			time.sleep(1)
-			os.system('reboot')
 
 		# Check for MT
 		now = time.time()
@@ -178,7 +185,7 @@ def box_thread():
 		now = time.time()
 		elapsed_time_MO = int(abs(now-tStartMO))
 		if(elapsed_time_MO >= mo_time_interval):
-			sensor_data()                   # read sensor data
+			sensor_data()                   	# read sensor data
 			try:
 				MoTPZ().main()                  # send MO
 				ir_status = 1
@@ -195,7 +202,6 @@ def box_thread():
 # API Class Box
 class Box(Resource):
 	def get(self):
-		json_data["status_iridium"] = ir_status
 		return {"boxdata" : json_data}, 200
 
 
