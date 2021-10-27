@@ -40,6 +40,7 @@
 	    document.getElementById("g8").innerHTML = 0;
             document.getElementById("moget").innerHTML = 0;
             document.getElementById("mtget").innerHTML = 0;
+	    document.getElementById("imei").innerHTML = 0;
 
             document.getElementById("gpio1_go").onclick = function() {that.gpio1_action()};
 	    document.getElementById("gpio2_go").onclick = function() {that.gpio2_action()};
@@ -267,26 +268,28 @@
                     var resp = xmlHttp.responseText;
                     var json = JSON.parse(resp);
 
-		    var statusIridium = json.boxdata.status_iridium;
-		    var statusADC = json.boxdata.ADC_status;
-		    var sMO = json.boxdata.sampleMO;
-		    var sMT = json.boxdata.sampleMT;
-		    var adc1 = json.boxdata.ADC1;
-		    var adc2 = json.boxdata.ADC2;
-		    var adc3 = json.boxdata.ADC3;
-		    var adc4 = json.boxdata.ADC4;
-		    var adc5 = json.boxdata.ADC5;
-		    var adc6 = json.boxdata.ADC6;
-		    var adc7 = json.boxdata.ADC7;
-		    var adc8 = json.boxdata.ADC8;
-		    var gpio1 = json.boxdata.D1;
-		    var gpio2 = json.boxdata.D2;
-		    var gpio3 = json.boxdata.D3;
-		    var gpio4 = json.boxdata.D4;
-		    var gpio5 = json.boxdata.D5;
-		    var gpio6 = json.boxdata.D6;
-		    var gpio7 = json.boxdata.D7;
-		    var gpio8 = json.boxdata.D8;
+		    var statusIridium = json.status_iridium;
+		    var statusADC = json.ADC_status;
+		    var statusGPIO = json.GPIO_status;
+		    var sMO = json.sampleMO;
+		    var sMT = json.sampleMT;
+		    var imei = json.IMEI;
+		    var adc1 = json.ADC1;
+		    var adc2 = json.ADC2;
+		    var adc3 = json.ADC3;
+		    var adc4 = json.ADC4;
+		    var adc5 = json.ADC5;
+		    var adc6 = json.ADC6;
+		    var adc7 = json.ADC7;
+		    var adc8 = json.ADC8;
+		    var gpio1 = json.D1;
+		    var gpio2 = json.D2;
+		    var gpio3 = json.D3;
+		    var gpio4 = json.D4;
+		    var gpio5 = json.D5;
+		    var gpio6 = json.D6;
+		    var gpio7 = json.D7;
+		    var gpio8 = json.D8;
 
                     if(statusIridium == "1")
                     	document.getElementById("irstate").style.backgroundColor = "green";
@@ -302,10 +305,13 @@
 		    else
 			document.getElementById("adcstate").style.backgroundColor = "gray";
 
-		    //if(statusADC == "1")
-                    //    document.getElementById("dstate").style.backgroundColor = "green";
-                    //else
-                    //    document.getElementById("dstate").style.backgroundColor = "red";
+		    if(statusGPIO == "1")
+                        document.getElementById("dstate").style.backgroundColor = "green";
+                    else if(statusADC == "0")
+                        document.getElementById("dstate").style.backgroundColor = "red";
+                    else
+                        document.getElementById("dstate").style.backgroundColor = "gray";
+
 
                     document.getElementById("a1").innerHTML = adc1;
 		    document.getElementById("a2").innerHTML = adc2;
@@ -325,6 +331,7 @@
 		    document.getElementById("g8").innerHTML = gpio8;
                     document.getElementById("moget").innerHTML = sMO;
                     document.getElementById("mtget").innerHTML = sMT;
+		    document.getElementById("imei").innerHTML = imei;
                 }
                 else{
 		  that.ticks_off += 1;
