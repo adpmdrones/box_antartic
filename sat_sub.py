@@ -56,16 +56,16 @@ class MoTPZ(rockBlockProtocol):
 		rb.close()
 
 	def rockBlockTxStarted(self):
-		logger.info("rockBlockTxStarted")
-		print ("rockBlockTxStarted")
+		logger.info("rockBlockMOStarted")
+		print ("rockBlockMTStarted")
 
 	def rockBlockTxFailed(self):
-		logger.warning("rockBlockTxFailed")
-		print ("rockBlockTxFailed")
+		logger.warning("rockBlockMOFailed")
+		print ("rockBlockMTFailed")
 
 	def rockBlockTxSuccess(self, momsn):
-		logger.info("rockBlockTxSuccess")
-		print ("rockBlockTxSuccess " + str(momsn))
+		logger.info("rockBlockMOSuccess")
+		print ("rockBlockMOSuccess " + str(momsn))
 
 
 # RockBlock MT
@@ -76,16 +76,16 @@ class MtTPZ(rockBlockProtocol):
 		rb.close()
 
 	def rockBlockRxStarted(self):
-		logger.info("rockBlockRxStarted")
-		print "rockBlockRxStarted"
+		logger.info("rockBlockMTStarted")
+		print "rockBlockMTStarted"
 
 	def rockBlockRxFailed(self):
-		logger.warning("rockBlockRxFailed")
-		print "rockBlockRxFailed"
+		logger.warning("rockBlockMTFailed")
+		print "rockBlockMTFailed"
 
 	def rockBlockRxReceived(self,mtmsn,data):
-		logger.info("rockBlockRxReceived " + data)
-		print "rockBlockRxReceived " + str(mtmsn) + " " + data
+		logger.info("rockBlockMTReceived " + data)
+		print "rockBlockMTReceived " + str(mtmsn) + " " + data
 		cmd = json.loads(data)
 		commandMT(cmd)
 
@@ -95,18 +95,23 @@ class MtTPZ(rockBlockProtocol):
 
 
 # Command
-def commandMT(cmd_json):
-	global json_data, mo_time_interval, mt_time_interval, reset
+def commandMT(cmd_json, rest=0):
+	global json_data, mo_time_interval, mt_time_interval
 	cmd_list_keys = list(cmd_json)
 	cmd_list_values = list(cmd_json.values())
 
 	# Update json data (DO values are read from sensors?)
 	param = cmd_list_keys[0]
 	value = cmd_list_values[0]
+	logger.info("CMD: " + str(param) + ", Value: " + str(value))
 
 	# Check for reset command
 	if param == "reset":
 		os.system('reboot')
+
+	# Check for shutdown command (ONLY VIA REST)
+	if param == "shutdown" and rest:
+		os.system('sudo shutdown now')
 
 	# Check for digital output command
 	elif param[0] == "D":
@@ -116,6 +121,7 @@ def commandMT(cmd_json):
 
 	# Change for change sample time command (MO)
 	elif param == "sampleMO":
+		mo_time_interval = int(value)
 		json_data[param] = value
 		logger.info("Change MO sample time")
 		parser.set('params', 'mo_time', str(value))
@@ -124,6 +130,7 @@ def commandMT(cmd_json):
 
 	# Change for change sample time command (MT)
 	elif param == "sampleMT":
+		mt_time_interval = int(value)
 		json_data[param] = value
 		logger.info("Change MT sample time")
 		parser.set('params', 'mt_time', str(value))
@@ -139,11 +146,9 @@ def iridium_init():
 			imei=confSBD().main()
 			json_data["IMEI"] = imei
 			json_data["status_iridium"] = 1
-			update_state()
 			break
 		except:
 			json_data["status_iridium"] = 0
-			update_state()
 
 
 # Init ADC
@@ -153,11 +158,9 @@ def adc_init():
 		adc_status = adc.init_adc()
 		if adc_status:
 			json_data["ADC_status"] = 1
-			update_state()
 			break
 		else:
 			json_data["ADC_status"] = 0
-			update_state()
 
 
 # Init I/O
@@ -168,19 +171,17 @@ def gpio_init():
 			gpio.SC16IS752GPIO_Init()
 			for x in range(8):
 				gpio.SC16IS752GPIO_Mode(x, OUT)
+				gpio.SC16IS752GPIO_Write(x, 0)
 			json_data["GPIO_status"] = 1
-			update_state()
 			break
 		except:
 			json_data["GPIO_status"] = 0
-			update_state()
 
 
 # Iridium state
 def iridium_state(state):
 	global json_data
 	json_data["status_iridium"] = state
-	update_state()
 
 
 # Sensor data
@@ -218,7 +219,6 @@ def sensor_data():
 		json_data["GPIO_status"] = 0
 		logger.warning("GPIO bad status")
 
-	update_state()
 
 
 
@@ -255,6 +255,7 @@ def box_thread():
 		elapsed_time_MO = int(abs(now-tStartMO))
 		if(elapsed_time_MO >= mo_time_interval):
 			try:
+				update_state()
 				MoTPZ().main()                  # send MO
 				iridium_state(1)
 			except:
@@ -283,7 +284,7 @@ class Box(Resource):
 		param = args.parameter
 		value = args.value
 		command = {param: value}
-		commandMT(command)
+		commandMT(command, rest=1)
 		return {}, 200
 
 
