@@ -452,7 +452,7 @@ class ADS1263:
             ADC_Value[i] = self.ADS1263_GetChannalValue(i)
             self.ADS1263_WriteCmd(ADS1263_CMD['CMD_STOP1'])
             config.delay_ms(20) 
-        print("--- Read ADC1 value success ---")
+        #print("--- Read ADC1 value success ---")
         return ADC_Value
           
           

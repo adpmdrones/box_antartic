@@ -32,7 +32,8 @@ mo_time_interval = float(parser.get('params', 'mo_time'))
 mt_time_interval = float(parser.get('params', 'mt_time'))
 adc_status = -1
 forceMO = False
-initSensors = False
+get = False
+isSending = 0
 gpio = CDLL('./SC16IS752GPIO.so')
 OUT = 1
 IN  = 0
@@ -297,14 +298,31 @@ def update_state():
 
 # BOX thread
 def box_thread():
-	global forceMO, initSensors
+	global forceMO, get, isSending
 	iridium_init() 	                # init Iridium
 	adc_init()			# init ADC
 	gpio_init()			# init GPIO
-	initSensors = True
 
+	httpOffTicks = 0
 	tStartMO = tStartMT = time.time()		# timer
 	while True:
+
+
+		# Update sensor data
+		sensor_data()
+
+		# Sleep
+		time.sleep(2)
+
+		# Check for configuration webserver is on
+		if get == True:
+			get = False
+			httpOffTicks = 0
+			continue
+		else:
+			httpOffTicks += 1
+			if httpOffTicks < 2:
+				continue
 
 		# Update values and send MO
 		now = time.time()
@@ -315,6 +333,7 @@ def box_thread():
 
 			try:
 				update_state()
+				isSending = 1
 				SatTPZ().main()                  # send MO and check for MT
 				iridium_state(1)
 			except:
@@ -322,25 +341,19 @@ def box_thread():
 				iridium_state(0)
 
 			tStartMO = time.time()                   # restart timer
+			isSending = 0
 
-		time.sleep(2)
-
-
-# Sensors thread
-def sensors_thread():
-	while initSensors == False:
-		time.sleep(2)
-		pass
-	while True:
-		sensor_data()
-		time.sleep(3)
 
 
 
 # API Class Box
 class Box(Resource):
 	def get(self):
-		return json_data, 200
+		global get
+		get = True
+		rest_json_data = copy.copy(json_data)		# Add extra info only for restapi
+		rest_json_data["isSending"] = isSending
+		return rest_json_data, 200
 
 	def post(self):
 		parser = reqparse.RequestParser()
@@ -362,11 +375,6 @@ if __name__ == '__main__':
 	boxThread = threading.Thread(target=box_thread)
 	boxThread.daemon = True
 	boxThread.start()
-
-	# Start sensors thread
-        sensThread = threading.Thread(target=sensors_thread)
-        sensThread.daemon = True
-        sensThread.start()
 
 	# Define REST API
 	app = Flask(__name__)

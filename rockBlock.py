@@ -572,7 +572,7 @@ class rockBlock(object):
                 self.callback.rockBlockRxReceived(mtMsn, "")
                                     
         else:                                
-                                                    
+            print("MT complete message: " + response)                                        
             content = response[2:-2]
                         
             if(self.callback != None and callable(self.callback.rockBlockRxReceived) ): 

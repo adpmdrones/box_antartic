@@ -21,7 +21,6 @@ import serial
 import adc
 from gpiozero import CPUTemperature
 import psutil
-import copy
 
 
 # Read and parse config.ini
@@ -32,7 +31,6 @@ mo_time_interval = float(parser.get('params', 'mo_time'))
 mt_time_interval = float(parser.get('params', 'mt_time'))
 adc_status = -1
 forceMO = False
-initSensors = False
 gpio = CDLL('./SC16IS752GPIO.so')
 OUT = 1
 IN  = 0
@@ -164,26 +162,18 @@ def commandMT(cmd_json, rest=0):
 	# Change for change sample time command (MO)
 	elif param == "sampleMO":
 		mo_time_interval = int(value)
-		json_data["sampleMO"] = value
-		json_data["sampleMT"] = value
+		json_data[param] = value
 		logger.info("Change MO sample time")
 		parser.set('params', 'mo_time', str(value))
-		with open('config.ini', 'wb') as configfile:
-			parser.write(configfile)
-		parser.set('params', 'mt_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
 	# Change for change sample time command (MT)
 	elif param == "sampleMT":
 		mt_time_interval = int(value)
-		json_data["sampleMT"] = value
-		json_data["sampleMO"] = value
+		json_data[param] = value
 		logger.info("Change MT sample time")
 		parser.set('params', 'mt_time', str(value))
-		with open('config.ini', 'wb') as configfile:
-			parser.write(configfile)
-		parser.set('params', 'mo_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
@@ -297,11 +287,10 @@ def update_state():
 
 # BOX thread
 def box_thread():
-	global forceMO, initSensors
+	global forceMO
 	iridium_init() 	                # init Iridium
 	adc_init()			# init ADC
 	gpio_init()			# init GPIO
-	initSensors = True
 
 	tStartMO = tStartMT = time.time()		# timer
 	while True:
@@ -323,17 +312,11 @@ def box_thread():
 
 			tStartMO = time.time()                   # restart timer
 
-		time.sleep(2)
-
-
-# Sensors thread
-def sensors_thread():
-	while initSensors == False:
-		time.sleep(2)
-		pass
-	while True:
+		# Update sensor data
 		sensor_data()
-		time.sleep(3)
+
+		# Sleep
+		time.sleep(2)
 
 
 
@@ -362,11 +345,6 @@ if __name__ == '__main__':
 	boxThread = threading.Thread(target=box_thread)
 	boxThread.daemon = True
 	boxThread.start()
-
-	# Start sensors thread
-        sensThread = threading.Thread(target=sensors_thread)
-        sensThread.daemon = True
-        sensThread.start()
 
 	# Define REST API
 	app = Flask(__name__)
