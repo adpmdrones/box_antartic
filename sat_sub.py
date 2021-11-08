@@ -21,7 +21,6 @@ import serial
 import adc
 from gpiozero import CPUTemperature
 import psutil
-import copy
 
 
 # Read and parse config.ini

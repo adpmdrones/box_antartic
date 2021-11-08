@@ -144,6 +144,15 @@ https://templatemo.com/tm-518-sentra
                             </div>
                         </div>
 
+			<div class="item">
+                            <div class="text-content">
+                                <h4>BOX <button id="boxstate" class="btn mt-3 w-100"></button></h4><br>
+
+                                <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Temperature °:         <span style="font-family:'Helvetica'; float:center;"  id="temp"></span></p>
+                                <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Disk free %:       <span style="font-family:'Helvetica'; float:center;"  id="sd"></span></p>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -232,6 +241,7 @@ https://templatemo.com/tm-518-sentra
         var delta = 5;
         var navbarHeight = $('header').outerHeight();
 
+	var url = "http://boxtelespazio:5000/box"
 	document.getElementById("a1").innerHTML = 0;
         document.getElementById("a2").innerHTML = 0;
         document.getElementById("a3").innerHTML = 0;
@@ -248,6 +258,8 @@ https://templatemo.com/tm-518-sentra
         document.getElementById("g6").innerHTML = 0;
         document.getElementById("g7").innerHTML = 0;
         document.getElementById("g8").innerHTML = 0;
+	document.getElementById("temp").innerHTML = 0;
+	document.getElementById("sd").innerHTML = 0;
         document.getElementById("moget").innerHTML = 0;
         document.getElementById("mtget").innerHTML = 0;
         document.getElementById("imei").innerHTML = 0;
@@ -280,7 +292,7 @@ https://templatemo.com/tm-518-sentra
                 return;
             }
             var http = new XMLHttpRequest();
-            http.open("POST", "http://raspberrypi:5000/box", true);
+            http.open("POST", url, true);
             http.setRequestHeader("Content-Type", "application/json");
             var data = JSON.stringify({"parameter": "reset", "value": 0});
             http.onload = function () {
@@ -309,7 +321,7 @@ https://templatemo.com/tm-518-sentra
                 return;
             }
 	    var http = new XMLHttpRequest();
-            http.open("POST", "http://raspberrypi:5000/box", true);
+            http.open("POST", url, true);
             http.setRequestHeader("Content-Type", "application/json");
             var data = JSON.stringify({"parameter": "shutdown", "value": 0});
             http.onload = function () {
@@ -327,7 +339,7 @@ https://templatemo.com/tm-518-sentra
 	    var gpio = "D" + document.getElementById("gpioo").value;
 	    var value = document.getElementById("status").value;
             var http = new XMLHttpRequest();
-            http.open("POST", "http://raspberrypi:5000/box", true);
+            http.open("POST", url, true);
             http.setRequestHeader("Content-Type", "application/json");
             var data = JSON.stringify({"parameter": gpio, "value": value});
             http.onload = function () {
@@ -345,7 +357,7 @@ https://templatemo.com/tm-518-sentra
 	    var momt = "sampleMO";
             var value = document.getElementById("time").value;
             var http = new XMLHttpRequest();
-            http.open("POST", "http://raspberrypi:5000/box", true);
+            http.open("POST", url, true);
             http.setRequestHeader("Content-Type", "application/json");
             var data = JSON.stringify({"parameter": momt, "value": value});
             http.onload = function () {
@@ -363,6 +375,7 @@ https://templatemo.com/tm-518-sentra
 	    xmlHttp.onreadystatechange = function () {
 		if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
 
+		    document.getElementById("boxstate").style.backgroundColor = "green";
 		    ticks = 0;
 		    var resp = xmlHttp.responseText;
                     var json = JSON.parse(resp);
@@ -373,6 +386,8 @@ https://templatemo.com/tm-518-sentra
                     var sMO = json.sampleMO;
                     var sMT = json.sampleMT;
                     var imei = json.IMEI;
+		    var temp = json.CPUtemp;
+		    var sd = json.DFreeSpace;
                     var adc1 = json.ADC1;
                     var adc2 = json.ADC2;
                     var adc3 = json.ADC3;
@@ -390,8 +405,9 @@ https://templatemo.com/tm-518-sentra
                     var gpio7 = json.D7;
                     var gpio8 = json.D8;
 
-		    if(statusIridium == "1")
+		    if(statusIridium == "1"){
                         document.getElementById("irstate").style.backgroundColor = "green";
+		    }
                     else if(statusIridium == "0")
                         document.getElementById("irstate").style.backgroundColor = "red";
                     else
@@ -427,6 +443,8 @@ https://templatemo.com/tm-518-sentra
                     document.getElementById("g6").innerHTML = gpio6;
                     document.getElementById("g7").innerHTML = gpio7;
                     document.getElementById("g8").innerHTML = gpio8;
+		    document.getElementById("temp").innerHTML = temp;
+		    document.getElementById("sd").innerHTML = sd;
                     document.getElementById("moget").innerHTML = sMO;
                     document.getElementById("mtget").innerHTML = sMT;
                     document.getElementById("imei").innerHTML = imei;
@@ -437,6 +455,7 @@ https://templatemo.com/tm-518-sentra
 		    if (ticks <= 10)
 			return;
 
+		    document.getElementById("boxstate").style.backgroundColor = "gray";
 		    document.getElementById("irstate").style.backgroundColor = "gray";
                     document.getElementById("adcstate").style.backgroundColor = "gray";
                     document.getElementById("gpiostate").style.backgroundColor = "gray";
@@ -457,12 +476,14 @@ https://templatemo.com/tm-518-sentra
                     document.getElementById("g6").innerHTML = "0";
                     document.getElementById("g7").innerHTML = "0";
                     document.getElementById("g8").innerHTML = "0";
+		    document.getElementById("temp").innerHTML = "0";
+                    document.getElementById("sd").innerHTML = "0";
                     document.getElementById("moget").innerHTML = "0";
                     document.getElementById("mtget").innerHTML = "0";
 
 		}
 	    }
-	    xmlHttp.open("GET", "http://raspberrypi:5000/box", true);
+	    xmlHttp.open("GET", url, true);
             xmlHttp.send(null);
 
 	}
