@@ -27,8 +27,9 @@ import psutil
 parser = SafeConfigParser()
 parser.read('config.ini')
 sat_port = parser.get('params', 'sat_port')
-mo_time_interval = float(parser.get('params', 'mo_time'))
-mt_time_interval = float(parser.get('params', 'mt_time'))
+mo_time_interval = int(parser.get('params', 'mo_time'))
+mt_time_interval = int(parser.get('params', 'mt_time'))
+max_time = int(parser.get('params', 'max_time'))
 adc_status = -1
 forceMO = False
 initSensors = False
@@ -75,15 +76,15 @@ class SatTPZ(rockBlockProtocol):
 		global forceMO
 		logger.info("rockBlockMTReceived " + data)
 		print "rockBlockMTReceived " + str(mtmsn) + " " + data
-		forceMO = True
-		#cmd = json.loads(data)
-
-		split_data = data.split("=")
-		key = split_data[0]
-		value = split_data[1]
-		cmd = {key:value}
-
-		commandMT(cmd)
+		try:
+			forceMO = True
+			split_data = data.split("=")
+			key = split_data[0]
+			value = split_data[1]
+			cmd = {key:value}
+			commandMT(cmd)
+		except:
+			logger.error("Bad provided command")
 
         def rockBlockRxMessageQueue(self,count):
                 pass
@@ -142,16 +143,16 @@ def commandMT(cmd_json, rest=0):
 	cmd_list_values = list(cmd_json.values())
 
 	# Update json data (DO values are read from sensors?)
-	param = cmd_list_keys[0]
-	value = cmd_list_values[0]
+	param = cmd_list_keys[0].upper()
+	value = int(cmd_list_values[0])
 	logger.info("CMD: " + str(param) + ", Value: " + str(value))
 
 	# Check for reset command
-	if param == "reset":
+	if param == "RESET":
 		os.system('reboot')
 
 	# Check for shutdown command (ONLY VIA REST)
-	if param == "shutdown" and rest:
+	if param == "SHUTDOWN" and rest:
 		os.system('sudo shutdown now')
 
 	# Check for digital output command
@@ -161,7 +162,8 @@ def commandMT(cmd_json, rest=0):
 		gpio.SC16IS752GPIO_Write(pin, value)
 
 	# Change for change sample time command (MO)
-	elif param == "sampleMO":
+	elif param == "SAMPLEMO":
+		value = max(min(value, max_time), 10)
 		mo_time_interval = int(value)
 		json_data["sampleMO"] = value
 		json_data["sampleMT"] = value
@@ -174,7 +176,8 @@ def commandMT(cmd_json, rest=0):
 			parser.write(configfile)
 
 	# Change for change sample time command (MT)
-	elif param == "sampleMT":
+	elif param == "SAMPLEMT":
+		value = max(min(value, max_time), 10)
 		mt_time_interval = int(value)
 		json_data["sampleMT"] = value
 		json_data["sampleMO"] = value
@@ -185,6 +188,11 @@ def commandMT(cmd_json, rest=0):
 		parser.set('params', 'mo_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
+
+	# Command has no effect
+	else:
+		logger.warning("Command has no effect")
+
 
 
 # Check Iridium connection at boot
@@ -310,6 +318,7 @@ def box_thread():
 		elapsed_time_MO = int(abs(now-tStartMO))
 		if(elapsed_time_MO >= mo_time_interval or forceMO):
 			if forceMO:
+				time.sleep(5)		# allow sensor values to be updated
 				forceMO = False
 
 			try:
