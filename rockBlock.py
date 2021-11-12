@@ -309,7 +309,7 @@ class rockBlock(object):
     #Private Methods - Don't call these directly!
     def _queueMessage(self, msg):
         self._ensureConnectionStatus()
-                
+        print(len(msg))
         if( len(msg) > 340):
                
             print ("sendMessageWithBytes bytes should be <= 340 bytes")

@@ -109,7 +109,6 @@ https://templatemo.com/tm-518-sentra
 
 				<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:1px;">IMEI:          <span style="font-family:'Helvetica'; float:center;"  id="imei"></span></p>
                              	<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:1px;">MO time (s):   <span style="font-family:'Helvetica'; float:center;"  id="moget"></span></p>
-                             	<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:0px;">MT time (s):   <span style="font-family:'Helvetica'; float:center;"  id="mtget"></span></p>
                             </div>
 
                         </div>
@@ -118,6 +117,7 @@ https://templatemo.com/tm-518-sentra
                             <div class="text-content">
                                 <h4>ADC <button id="adcstate" class="btn mt-3 w-100"></button></h4><br>
 
+				<p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">MULTIP:         <span style="font-family:'Helvetica'; float:center;"  id="m"></span></p>
 				<p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC1:         <span style="font-family:'Helvetica'; float:center;"  id="a1"></span></p>
                                 <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC2:         <span style="font-family:'Helvetica'; float:center;"  id="a2"></span></p>
                                 <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">ADC3:         <span style="font-family:'Helvetica'; float:center;"  id="a3"></span></p>
@@ -166,6 +166,37 @@ https://templatemo.com/tm-518-sentra
                 </div>
 		<div class="section-content">
                     <div class="owl-carousel owl-theme">
+
+			<div class="item">
+                            <form>
+                                    <div class="form-group">
+                                      <div class="col-xs-4">
+                                        <label for="momt">Satellite MO</label>
+                                        <div>&nbsp;</div>
+                                        <label for="time">Time</label>
+                                        <input id="time" type="number" step="1" min="0" max="1000" class="form-control">
+                                      </div>
+                                    </div>
+                            </form>
+                        <br><br><button id="sat_go" class="btn btn-success mt-3 w-100">SET</button>
+                        </div>
+
+
+			<div class="item">
+                            <form>
+                                    <div class="form-group">
+                                      <div class="col-xs-4">
+                                        <label for="momt">ADC MULTIP</label>
+                                        <div>&nbsp;</div>
+                                        <label for="vadc">Value</label>
+                                        <input id="vadc" type="number" step="any" class="form-control">
+                                      </div>
+                                    </div>
+                            </form>
+                        <br><br><button id="adc_go" class="btn btn-success mt-3 w-100">SET</button>
+                        </div>
+
+
                         <div class="item">
                             <form>
                                     <div class="form-group">
@@ -193,24 +224,6 @@ https://templatemo.com/tm-518-sentra
 			<br><br><button id="gpio_go" class="btn btn-success mt-3 w-100">SET</button>
                         </div>
 
-			<div class="item">
-			    <form>
-                                    <div class="form-group">
-				      <div class="col-xs-4">
-                                        <label for="momt">Satellite</label>
-                                        
-					&nbsp;&nbsp;<select name="momt" id="momt">
-  						<option value="MO">MO</option>
-  						<option value="MT">MT</option>
-					</select>
-					<div>&nbsp;</div>
-                                        <label for="time">Time</label>
-                                        <input id="time" type="number" step="1" min="0" max="1000" class="form-control">
-                                      </div>
-				    </div>
-                            </form>
-			<br><br><button id="sat_go" class="btn btn-success mt-3 w-100">SET</button>
-			</div>
 
 			<div class="item">
 				<button id="reboot" class="btn btn-warning mt-3 w-100">REBOOT</button><br><br>
@@ -242,6 +255,7 @@ https://templatemo.com/tm-518-sentra
         var navbarHeight = $('header').outerHeight();
 
 	var url = "http://boxtelespazio:5000/box"
+	document.getElementById("m").innerHTML = 1;
 	document.getElementById("a1").innerHTML = 0;
         document.getElementById("a2").innerHTML = 0;
         document.getElementById("a3").innerHTML = 0;
@@ -261,10 +275,10 @@ https://templatemo.com/tm-518-sentra
 	document.getElementById("temp").innerHTML = 0;
 	document.getElementById("sd").innerHTML = 0;
         document.getElementById("moget").innerHTML = 0;
-        document.getElementById("mtget").innerHTML = 0;
         document.getElementById("imei").innerHTML = 0;
 	document.getElementById("gpio_go").onclick = function() {gpio_action()};
 	document.getElementById("sat_go").onclick = function() {sat_action()};
+	document.getElementById("adc_go").onclick = function() {adc_action()};
 	document.getElementById("reboot").onclick = function() {reboot_action()};
 	document.getElementById("shutdown").onclick = function() {shutdown_action()};
 	var ticks = 0;
@@ -347,13 +361,28 @@ https://templatemo.com/tm-518-sentra
 	}
 
 	function sat_action(){
-            //var momt = "sample" + document.getElementById("momt").value;
 	    var momt = "sampleMO";
             var value = document.getElementById("time").value;
             var http = new XMLHttpRequest();
             http.open("POST", url, true);
             http.setRequestHeader("Content-Type", "application/json");
             var data = JSON.stringify({"parameter": momt, "value": value});
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+            http.send(data);
+        }
+
+	function adc_action(){
+            var value = parseFloat(document.getElementById("vadc").value);
+            var http = new XMLHttpRequest();
+            http.open("POST", url, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"parameter": "MULTIP", "value": value});
             http.onload = function () {
               if(http.status == 200)
                 alert("OK: command sent");
@@ -375,21 +404,21 @@ https://templatemo.com/tm-518-sentra
                     var json = JSON.parse(resp);
 
 		    var statusIridium = json.status_iridium;
-                    var statusADC = json.ADC_status;
-                    var statusGPIO = json.GPIO_status;
-                    var sMO = json.sampleMO;
-                    var sMT = json.sampleMT;
+                    var statusADC = json.ADC;
+                    var statusGPIO = json.GPIO;
+                    var sMO = json.MO;
                     var imei = json.IMEI;
-		    var temp = json.CPUtemp;
-		    var sd = json.DFreeSpace;
-                    var adc1 = json.ADC1;
-                    var adc2 = json.ADC2;
-                    var adc3 = json.ADC3;
-                    var adc4 = json.ADC4;
-                    var adc5 = json.ADC5;
-                    var adc6 = json.ADC6;
-                    var adc7 = json.ADC7;
-                    var adc8 = json.ADC8;
+		    var temp = json.CPU;
+		    var sd = json.DFS;
+		    var mul = json.xA;
+                    var adc1 = json.A1;
+                    var adc2 = json.A2;
+                    var adc3 = json.A3;
+                    var adc4 = json.A4;
+                    var adc5 = json.A5;
+                    var adc6 = json.A6;
+                    var adc7 = json.A7;
+                    var adc8 = json.A8;
                     var gpio1 = json.D1;
                     var gpio2 = json.D2;
                     var gpio3 = json.D3;
@@ -421,6 +450,7 @@ https://templatemo.com/tm-518-sentra
                     else
                         document.getElementById("gpiostate").style.backgroundColor = "gray";
 
+		    document.getElementById("m").innerHTML = mul;
 		    document.getElementById("a1").innerHTML = adc1;
                     document.getElementById("a2").innerHTML = adc2;
                     document.getElementById("a3").innerHTML = adc3;
@@ -440,13 +470,12 @@ https://templatemo.com/tm-518-sentra
 		    document.getElementById("temp").innerHTML = temp;
 		    document.getElementById("sd").innerHTML = sd;
                     document.getElementById("moget").innerHTML = sMO;
-                    document.getElementById("mtget").innerHTML = sMT;
                     document.getElementById("imei").innerHTML = imei;
 		}
 		else {
 
 		    ticks ++;
-		    if (ticks <= 10)
+		    if (ticks <= 20)
 			return;
 
 		    document.getElementById("boxstate").style.backgroundColor = "gray";
@@ -454,6 +483,7 @@ https://templatemo.com/tm-518-sentra
                     document.getElementById("adcstate").style.backgroundColor = "gray";
                     document.getElementById("gpiostate").style.backgroundColor = "gray";
 
+		    document.getElementById("m").innerHTML = "1";
                     document.getElementById("a1").innerHTML = "0";
                     document.getElementById("a2").innerHTML = "0";
                     document.getElementById("a3").innerHTML = "0";
@@ -473,7 +503,6 @@ https://templatemo.com/tm-518-sentra
 		    document.getElementById("temp").innerHTML = "0";
                     document.getElementById("sd").innerHTML = "0";
                     document.getElementById("moget").innerHTML = "0";
-                    document.getElementById("mtget").innerHTML = "0";
 
 		}
 	    }

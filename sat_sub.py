@@ -21,6 +21,7 @@ import serial
 import adc
 from gpiozero import CPUTemperature
 import psutil
+import copy
 
 
 # Read and parse config.ini
@@ -28,15 +29,14 @@ parser = SafeConfigParser()
 parser.read('config.ini')
 sat_port = parser.get('params', 'sat_port')
 mo_time_interval = int(parser.get('params', 'mo_time'))
-mt_time_interval = int(parser.get('params', 'mt_time'))
 max_time = int(parser.get('params', 'max_time'))
-adc_status = -1
+multip = float(parser.get('params', 'multip'))
 forceMO = False
 initSensors = False
 gpio = CDLL('./SC16IS752GPIO.so')
 OUT = 1
 IN  = 0
-json_data = {"IMEI": 0, "ADC_status":-1, "GPIO_status":-1, "status_iridium": -1, "sampleMO":mo_time_interval, "sampleMT":mt_time_interval, "CPUtemp": 0, "DFreeSpace": "100%", "ADC1":0.0, "ADC2":0.0, "ADC3":0.0, "ADC4":0.0, "ADC5":0.0, "ADC6":0.0, "ADC7":0.0, "ADC8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
+json_data = {"IMEI": 0, "xA": multip, "ADC":-1, "GPIO":-1, "status_iridium": -1, "MO":mo_time_interval, "CPU": 0, "DFS": "100", "A1":0.0, "A2":0.0, "A3":0.0, "A4":0.0, "A5":0.0, "A6":0.0, "A7":0.0, "A8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
 
 
@@ -138,13 +138,13 @@ class MtTPZ(rockBlockProtocol):
 
 # Command
 def commandMT(cmd_json, rest=0):
-	global json_data, mo_time_interval, mt_time_interval
+	global json_data, mo_time_interval, mt_time_interval, multip
 	cmd_list_keys = list(cmd_json)
 	cmd_list_values = list(cmd_json.values())
 
 	# Update json data (DO values are read from sensors?)
 	param = cmd_list_keys[0].upper()
-	value = int(cmd_list_values[0])
+	value = cmd_list_values[0]
 	logger.info("CMD: " + str(param) + ", Value: " + str(value))
 
 	# Check for reset command
@@ -157,16 +157,15 @@ def commandMT(cmd_json, rest=0):
 
 	# Check for digital output command
 	elif param[0] == "D":
-		value = min(value,1)
+		value = min(int(value),1)
 		pin = int(param[1]) -1
 		gpio.SC16IS752GPIO_Write(pin, value)
 
 	# Change for change sample time command (MO)
 	elif param == "SAMPLEMO":
-		value = max(min(value, max_time), 10)
+		value = max(min(int(value), max_time), 10)	# saturate within 10 - max_time
 		mo_time_interval = int(value)
-		json_data["sampleMO"] = value
-		json_data["sampleMT"] = value
+		json_data["MO"] = value
 		logger.info("Change MO sample time")
 		parser.set('params', 'mo_time', str(value))
 		with open('config.ini', 'wb') as configfile:
@@ -176,16 +175,12 @@ def commandMT(cmd_json, rest=0):
 			parser.write(configfile)
 
 	# Change for change sample time command (MT)
-	elif param == "SAMPLEMT":
-		value = max(min(value, max_time), 10)
-		mt_time_interval = int(value)
-		json_data["sampleMT"] = value
-		json_data["sampleMO"] = value
-		logger.info("Change MT sample time")
-		parser.set('params', 'mt_time', str(value))
-		with open('config.ini', 'wb') as configfile:
-			parser.write(configfile)
-		parser.set('params', 'mo_time', str(value))
+	elif param == "MULTIP":
+		value = float(max(min(value, 10.0), -10.0))	# saturate within -10 - 10
+		multip = value
+		json_data["xA"] = value
+		logger.info("Change voltage factor")
+		parser.set('params', 'multip', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
@@ -200,7 +195,7 @@ def iridium_init():
 	global json_data
 	while True:
 		try:
-			imei=confSBD().main()
+			imei = confSBD().main()
 			json_data["IMEI"] = imei
 			json_data["status_iridium"] = 1
 			break
@@ -214,10 +209,10 @@ def adc_init():
 	while True:
 		adc_status = adc.init_adc()
 		if adc_status:
-			json_data["ADC_status"] = 1
+			json_data["ADC"] = 1
 			break
 		else:
-			json_data["ADC_status"] = 0
+			json_data["ADC"] = 0
 
 
 # Init I/O
@@ -229,10 +224,10 @@ def gpio_init():
 			for x in range(8):
 				gpio.SC16IS752GPIO_Mode(x, OUT)
 				gpio.SC16IS752GPIO_Write(x, 0)
-			json_data["GPIO_status"] = 1
+			json_data["GPIO"] = 1
 			break
 		except:
-			json_data["GPIO_status"] = 0
+			json_data["GPIO"] = 0
 
 
 # Iridium state
@@ -248,17 +243,17 @@ def sensor_data():
 	# Read ADC
 	try:
 		values = adc.read_adc()
-		json_data["ADC1"] = round(values[1], 2)
-		json_data["ADC2"] = round(values[2], 2)
-		json_data["ADC3"] = round(values[3], 2)
-		json_data["ADC4"] = round(values[4], 2)
-		json_data["ADC5"] = round(values[5], 2)
-		json_data["ADC6"] = round(values[6], 2)
-		json_data["ADC7"] = round(values[7], 2)
-		json_data["ADC8"] = round(values[8], 2)
-		json_data["ADC_status"] = 1
+		json_data["A1"] = round(values[1] * multip, 2)
+		json_data["A2"] = round(values[2] * multip, 2)
+		json_data["A3"] = round(values[3] * multip, 2)
+		json_data["A4"] = round(values[4] * multip, 2)
+		json_data["A5"] = round(values[5] * multip, 2)
+		json_data["A6"] = round(values[6] * multip, 2)
+		json_data["A7"] = round(values[7] * multip, 2)
+		json_data["A8"] = round(values[8] * multip, 2)
+		json_data["ADC"] = 1
 	except:
-		json_data["ADC_status"] = 0
+		json_data["ADC"] = 0
 		logger.warning("ADC bad status")
 
 	# Read I/O state
@@ -271,9 +266,9 @@ def sensor_data():
 		json_data["D6"] = gpio.SC16IS752GPIO_Read(5)
 		json_data["D7"] = gpio.SC16IS752GPIO_Read(6)
 		json_data["D8"] = gpio.SC16IS752GPIO_Read(7)
-		json_data["GPIO_status"] = 1
+		json_data["GPIO"] = 1
 	except:
-		json_data["GPIO_status"] = 0
+		json_data["GPIO"] = 0
 		logger.warning("GPIO bad status")
 
 
@@ -287,8 +282,8 @@ def sensor_data():
                 free = float(hdd.free / (2**30))
 		freePerc = float((free/total))*100.0
 
-		json_data["DFreeSpace"] = int(freePerc)
-		json_data["CPUtemp"] = cpu
+		json_data["DFS"] = int(freePerc)
+		json_data["CPU"] = cpu
 	except:
 		logger.warning("BOX bad internal status")
 
@@ -298,7 +293,13 @@ def sensor_data():
 # Update state string
 def update_state():
 	global string_data
-	string_data = json.dumps(json_data, sort_keys=True)
+
+	# Make a copy of json state, in order to manage data to send via Iridium without modifying json state
+	iridium_json = copy.copy(json_data)
+	del iridium_json["status_iridium"]
+	### manage data ###
+
+	string_data = json.dumps(iridium_json, sort_keys=True)
 	logger.info(string_data)
 
 
@@ -353,7 +354,7 @@ class Box(Resource):
 	def post(self):
 		parser = reqparse.RequestParser()
 		parser.add_argument('parameter', type=str, required=True)
-		parser.add_argument('value', type=int, required=True)
+		parser.add_argument('value', type=float, required=True)
 		args = parser.parse_args()
 		param = args.parameter
 		value = args.value
