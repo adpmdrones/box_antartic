@@ -12,6 +12,7 @@ from rockBlock import rockBlockProtocol
 import json
 import time
 import os
+import sys
 import threading
 from ctypes import *
 from flask import Flask
@@ -22,6 +23,13 @@ import adc
 from gpiozero import CPUTemperature
 import psutil
 import copy
+import RPi.GPIO
+import datetime
+import subprocess
+libdir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib')
+if os.path.exists(libdir):
+	sys.path.append(libdir)
+from waveshare_DS3231 import DS3231
 
 
 # Read and parse config.ini
@@ -36,14 +44,13 @@ initSensors = False
 gpio = CDLL('./SC16IS752GPIO.so')
 OUT = 1
 IN  = 0
-json_data = {"IMEI": 0, "xA": multip, "ADC":-1, "GPIO":-1, "status_iridium": -1, "MO":mo_time_interval, "CPU": 0, "DFS": "100", "A1":0.0, "A2":0.0, "A3":0.0, "A4":0.0, "A5":0.0, "A6":0.0, "A7":0.0, "A8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
+json_data = {"IMEI": 0, "xA": multip, "ADC":-1, "GPIO":-1, "status_iridium": -1, "date": " ", "MO":mo_time_interval, "CPU": 0, "DFS": "100", "A1":0.0, "A2":0.0, "A3":0.0, "A4":0.0, "A5":0.0, "A6":0.0, "A7":0.0, "A8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
 
 
 # Create logger
 logger = logging.getLogger('ANTARTIC')
 logging.basicConfig(level=logging.INFO, filename='/var/log/TPZANT/ant.log', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
-logger.info("START")
 
 
 # Rockblock config
@@ -155,13 +162,18 @@ def commandMT(cmd_json, rest=0):
 	if param == "SHUTDOWN" and rest:
 		os.system('sudo shutdown now')
 
+	# Check for set time command
+	if param == "SYNCHTIME" and rest:
+		set_time(value)
+		pass
+
 	# Check for digital output command
 	elif param[0] == "D":
 		value = min(int(value),1)
 		pin = int(param[1]) -1
 		gpio.SC16IS752GPIO_Write(pin, value)
 
-	# Change for change sample time command (MO)
+	# Check for change sample time command (MO)
 	elif param == "SAMPLEMO":
 		value = max(min(int(value), max_time), 10)	# saturate within 10 - max_time
 		mo_time_interval = int(value)
@@ -174,9 +186,9 @@ def commandMT(cmd_json, rest=0):
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
-	# Change for change sample time command (MT)
-	elif param == "MULTIP":
-		value = float(max(min(value, 10.0), -10.0))	# saturate within -10 - 10
+	# Check for change voltage multiplicator command
+	elif param == "MUL":
+		value = float(max(min(float(value), 10.0), -10.0))	# saturate within -10 - 10
 		multip = value
 		json_data["xA"] = value
 		logger.info("Change voltage factor")
@@ -297,10 +309,48 @@ def update_state():
 	# Make a copy of json state, in order to manage data to send via Iridium without modifying json state
 	iridium_json = copy.copy(json_data)
 	del iridium_json["status_iridium"]
-	### manage data ###
+	del iridium_json["date"]
 
 	string_data = json.dumps(iridium_json, sort_keys=True)
 	logger.info(string_data)
+
+
+
+# Set time
+def set_time(value):
+	date_time = value.split("T")
+
+	# Set RTC datetime mode
+	RTC.SET_Hour_Mode(24)
+	RTC.SET_Day(7)
+
+	# Set RTC date
+	ddate = date_time[0].split("-")
+	RTC.SET_Calendar(int(ddate[0]), int(ddate[1]), int(ddate[2]))
+
+	# Set RTC time
+	ttime = date_time[1].split(":")
+	RTC.SET_Time(int(ttime[0]), int(ttime[1]), 00)
+
+	# Update datetime system
+	update_time(1)
+
+
+
+# Update time
+def update_time(sudo=0):
+	global json_data
+	day = RTC.Read_Calendar()
+	months = [" ", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+	time = RTC.Read_Time()
+	full_date = months[day[1]] + " " + str(day[2]) + " " + str(time[0]) + ":" + str(time[1]) + " UTC " + str(day[0])
+	json_data["date"] = full_date
+
+	# Update system time
+	if sudo:
+		sudodate = subprocess.Popen(["sudo", "date", "-s", full_date])
+		sudodate.communicate()
+		logger.info("System Time Updated")
 
 
 # BOX thread
@@ -345,6 +395,31 @@ def sensors_thread():
 		time.sleep(3)
 
 
+# Watchdog thread
+def wd_thread():
+	global RTC
+
+	# Init RTC
+	RTC = DS3231.DS3231(add = 0x68)
+	update_time(1)
+
+	# Init watchdog toggle pin
+	GPIO = RPi.GPIO
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setwarnings(False)
+	GPIO.setup(4, GPIO.OUT)
+	while True:
+		try:
+			GPIO.output(4, 1)
+			time.sleep(0.25)	# this value MUST NOT be changed
+			GPIO.output(4, 0)
+			time.sleep(60)		# this value MUST NOT be changed
+			update_time()
+		except:
+			logger.warning("Watchdog Issue")
+			time.sleep(5)
+			continue
+
 
 # API Class Box
 class Box(Resource):
@@ -354,7 +429,7 @@ class Box(Resource):
 	def post(self):
 		parser = reqparse.RequestParser()
 		parser.add_argument('parameter', type=str, required=True)
-		parser.add_argument('value', type=float, required=True)
+		parser.add_argument('value', required=True)
 		args = parser.parse_args()
 		param = args.parameter
 		value = args.value
@@ -366,6 +441,11 @@ class Box(Resource):
 
 # Start main thread
 if __name__ == '__main__':
+
+	# Start watchdog thread
+	wdThread = threading.Thread(target=wd_thread)
+        wdThread.daemon = True
+        wdThread.start()
 
 	# Start box thread
 	boxThread = threading.Thread(target=box_thread)

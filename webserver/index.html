@@ -148,8 +148,9 @@ https://templatemo.com/tm-518-sentra
                             <div class="text-content">
                                 <h4>BOX <button id="boxstate" class="btn mt-3 w-100"></button></h4><br>
 
-                                <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Temperature °:         <span style="font-family:'Helvetica'; float:center;"  id="temp"></span></p>
-                                <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Disk free %:       <span style="font-family:'Helvetica'; float:center;"  id="sd"></span></p>
+                                <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Temperature °:    <span style="font-family:'Helvetica'; float:center;"  id="temp"></span></p>
+                                <p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Disk free %:      <span style="font-family:'Helvetica'; float:center;"  id="sd"></span></p>
+				<p style="font-family:'Helvetica'; font-size:90%; margin-bottom:5px;">Date:       	<span style="font-family:'Helvetica'; float:center;"  id="date"></span></p>
                             </div>
                         </div>
 
@@ -226,6 +227,13 @@ https://templatemo.com/tm-518-sentra
 
 
 			<div class="item">
+  				<label for="systime">System time (UTC):</label><br>
+  				<input type="datetime-local" id="systime" name="systime">
+				<button id="time_go" class="btn btn-success mt-3 w-100">SET</button>
+                        </div>
+
+
+			<div class="item">
 				<button id="reboot" class="btn btn-warning mt-3 w-100">REBOOT</button><br><br>
 				<button id="shutdown" class="btn btn-danger mt-3 w-100">SHUTDOWN</button>
                         </div>
@@ -274,11 +282,13 @@ https://templatemo.com/tm-518-sentra
         document.getElementById("g8").innerHTML = 0;
 	document.getElementById("temp").innerHTML = 0;
 	document.getElementById("sd").innerHTML = 0;
+	document.getElementById("date").innerHTML = 0;
         document.getElementById("moget").innerHTML = 0;
         document.getElementById("imei").innerHTML = 0;
 	document.getElementById("gpio_go").onclick = function() {gpio_action()};
 	document.getElementById("sat_go").onclick = function() {sat_action()};
 	document.getElementById("adc_go").onclick = function() {adc_action()};
+	document.getElementById("time_go").onclick = function() {time_action()};
 	document.getElementById("reboot").onclick = function() {reboot_action()};
 	document.getElementById("shutdown").onclick = function() {shutdown_action()};
 	var ticks = 0;
@@ -382,7 +392,23 @@ https://templatemo.com/tm-518-sentra
             var http = new XMLHttpRequest();
             http.open("POST", url, true);
             http.setRequestHeader("Content-Type", "application/json");
-            var data = JSON.stringify({"parameter": "MULTIP", "value": value});
+            var data = JSON.stringify({"parameter": "MUL", "value": value});
+            http.onload = function () {
+              if(http.status == 200)
+                alert("OK: command sent");
+              else
+                alert(http.status);
+            };
+            http.onerror = function() { alert('ERROR: no server response'); };
+            http.send(data);
+        }
+
+	function time_action(){
+	    var value = document.getElementById("systime").value;
+            var http = new XMLHttpRequest();
+            http.open("POST", url, true);
+            http.setRequestHeader("Content-Type", "application/json");
+            var data = JSON.stringify({"parameter": "SYNCHTIME", "value": value});
             http.onload = function () {
               if(http.status == 200)
                 alert("OK: command sent");
@@ -410,6 +436,7 @@ https://templatemo.com/tm-518-sentra
                     var imei = json.IMEI;
 		    var temp = json.CPU;
 		    var sd = json.DFS;
+		    var date = json.date;
 		    var mul = json.xA;
                     var adc1 = json.A1;
                     var adc2 = json.A2;
@@ -469,6 +496,7 @@ https://templatemo.com/tm-518-sentra
                     document.getElementById("g8").innerHTML = gpio8;
 		    document.getElementById("temp").innerHTML = temp;
 		    document.getElementById("sd").innerHTML = sd;
+		    document.getElementById("date").innerHTML = date;
                     document.getElementById("moget").innerHTML = sMO;
                     document.getElementById("imei").innerHTML = imei;
 		}
@@ -502,6 +530,7 @@ https://templatemo.com/tm-518-sentra
                     document.getElementById("g8").innerHTML = "0";
 		    document.getElementById("temp").innerHTML = "0";
                     document.getElementById("sd").innerHTML = "0";
+		    document.getElementById("date").innerHTML = "0";
                     document.getElementById("moget").innerHTML = "0";
 
 		}
