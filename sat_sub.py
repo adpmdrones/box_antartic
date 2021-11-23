@@ -36,7 +36,8 @@ from waveshare_DS3231 import DS3231
 parser = SafeConfigParser()
 parser.read('config.ini')
 sat_port = parser.get('params', 'sat_port')
-mo_time_interval = int(parser.get('params', 'mo_time'))
+mo_time_interval = int(parser.get('params', 'mo_time'))*60
+mt_time_interval = int(parser.get('params', 'mt_time'))*60
 max_time = int(parser.get('params', 'max_time'))
 multip = float(parser.get('params', 'multip'))
 forceMO = False
@@ -44,7 +45,7 @@ initSensors = False
 gpio = CDLL('./SC16IS752GPIO.so')
 OUT = 1
 IN  = 0
-json_data = {"IMEI": 0, "xA": multip, "ADC":-1, "GPIO":-1, "status_iridium": -1, "date": " ", "MO":mo_time_interval, "CPU": 0, "DFS": "100", "A1":0.0, "A2":0.0, "A3":0.0, "A4":0.0, "A5":0.0, "A6":0.0, "A7":0.0, "A8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
+json_data = {"IMEI": 0, "xA": multip, "ADC":-1, "GPIO":-1, "status_iridium": -1, "date": " ", "MO":mo_time_interval/60, "MT":mt_time_interval/60, "CPU": 0, "DFS": "100", "A1":0.0, "A2":0.0, "A3":0.0, "A4":0.0, "A5":0.0, "A6":0.0, "A7":0.0, "A8":0.0, "D1":0, "D2":0,"D3":0, "D4":0, "D5":0, "D6":0, "D7":0, "D8":0}
 string_data = json.dumps(json_data)
 
 
@@ -133,10 +134,18 @@ class MtTPZ(rockBlockProtocol):
 		print "rockBlockMTFailed"
 
 	def rockBlockRxReceived(self,mtmsn,data):
+		global forceMO
 		logger.info("rockBlockMTReceived " + data)
 		print "rockBlockMTReceived " + str(mtmsn) + " " + data
-		cmd = json.loads(data)
-		commandMT(cmd)
+		try:
+			forceMO = True
+			split_data = data.split("=")
+			key = split_data[0]
+			value = split_data[1]
+			cmd = {key:value}
+			commandMT(cmd)
+		except:
+			logger.error("Bad provided command")
 
 	def rockBlockRxMessageQueue(self,count):
 		pass
@@ -145,7 +154,7 @@ class MtTPZ(rockBlockProtocol):
 
 # Command
 def commandMT(cmd_json, rest=0):
-	global json_data, mo_time_interval, mt_time_interval, multip
+	global json_data, mo_time_interval, mt_time_interval, multip, forceMO
 	cmd_list_keys = list(cmd_json)
 	cmd_list_values = list(cmd_json.values())
 
@@ -174,27 +183,41 @@ def commandMT(cmd_json, rest=0):
 		gpio.SC16IS752GPIO_Write(pin, value)
 
 	# Check for change sample time command (MO)
-	elif param == "SAMPLEMO":
-		value = max(min(int(value), max_time), 10)	# saturate within 10 - max_time
-		mo_time_interval = int(value)
+	elif param == "SAMPLEMO" or param == "MO":
+		value = int(value)
+		mo_time_interval = int(value)*60
 		json_data["MO"] = value
 		logger.info("Change MO sample time")
 		parser.set('params', 'mo_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
+
+	# Check for change sample time command (MT)
+	elif param == "SAMPLEMT" or param == "MT":
+		if rest:
+			value = min(int(value), max_time)      	# saturate within 10 - max_time
+		else:
+			value = int(value)
+		mt_time_interval = int(value)*60
+		json_data["MT"] = value
+		logger.info("Change MT sample time")
 		parser.set('params', 'mt_time', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
 
 	# Check for change voltage multiplicator command
 	elif param == "MUL":
-		value = float(max(min(float(value), 10.0), -10.0))	# saturate within -10 - 10
+		value = float(value)
 		multip = value
 		json_data["xA"] = value
 		logger.info("Change voltage factor")
 		parser.set('params', 'multip', str(value))
 		with open('config.ini', 'wb') as configfile:
 			parser.write(configfile)
+
+	# Trigger MO sending
+	elif param == "TRIG":
+		forceMO = True
 
 	# Command has no effect
 	else:
@@ -369,7 +392,7 @@ def box_thread():
 		elapsed_time_MO = int(abs(now-tStartMO))
 		if(elapsed_time_MO >= mo_time_interval or forceMO):
 			if forceMO:
-				time.sleep(5)		# allow sensor values to be updated
+				time.sleep(5)			 # allow sensor values to be updated
 				forceMO = False
 
 			try:
@@ -379,8 +402,19 @@ def box_thread():
 			except:
 				logger.error("Iridium not connected")
 				iridium_state(0)
-
 			tStartMO = time.time()                   # restart timer
+
+		# Check for MT
+		now = time.time()
+		elapsed_time_MT = int(abs(now-tStartMT))
+		if(elapsed_time_MT >= mt_time_interval):
+			try:
+				MtTPZ().main()
+				iridium_state(1)
+			except:
+				logger.error("Iridium not connected")
+				iridium_state(0)
+			tStartMT = time.time()                   # restart timer
 
 		time.sleep(2)
 

@@ -108,7 +108,8 @@ https://templatemo.com/tm-518-sentra
                                 <h4>Iridium SBD <button id="irstate" class="btn mt-3 w-100"></button></h4><br>
 
 				<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:1px;">IMEI:          <span style="font-family:'Helvetica'; float:center;"  id="imei"></span></p>
-                             	<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:1px;">MO time (s):   <span style="font-family:'Helvetica'; float:center;"  id="moget"></span></p>
+                             	<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:1px;">MO time (minutes):   <span style="font-family:'Helvetica'; float:center;"  id="moget"></span></p>
+				<p style="font-family:'Helvetica'; font-size:100%; margin-bottom:1px;">MT time (minutes):   <span style="font-family:'Helvetica'; float:center;"  id="mtget"></span></p>
                             </div>
 
                         </div>
@@ -172,9 +173,15 @@ https://templatemo.com/tm-518-sentra
                             <form>
                                     <div class="form-group">
                                       <div class="col-xs-4">
-                                        <label for="momt">Satellite MO</label>
+                                        <label for="momt">Satellite</label>
+
+					  <select name="momt" id="momt">
+                                                <option value="sampleMO">MO</option>
+                                                <option value="sampleMT">MT</option>
+					  </select>
+
                                         <div>&nbsp;</div>
-                                        <label for="time">Time</label>
+                                        <label for="time">Time (minutes)</label>
                                         <input id="time" type="number" step="1" min="0" max="1000" class="form-control">
                                       </div>
                                     </div>
@@ -284,6 +291,7 @@ https://templatemo.com/tm-518-sentra
 	document.getElementById("sd").innerHTML = 0;
 	document.getElementById("date").innerHTML = 0;
         document.getElementById("moget").innerHTML = 0;
+	document.getElementById("mtget").innerHTML = 0;
         document.getElementById("imei").innerHTML = 0;
 	document.getElementById("gpio_go").onclick = function() {gpio_action()};
 	document.getElementById("sat_go").onclick = function() {sat_action()};
@@ -371,7 +379,8 @@ https://templatemo.com/tm-518-sentra
 	}
 
 	function sat_action(){
-	    var momt = "sampleMO";
+	    var momt = document.getElementById("momt").value;
+
             var value = document.getElementById("time").value;
             var http = new XMLHttpRequest();
             http.open("POST", url, true);
@@ -433,6 +442,7 @@ https://templatemo.com/tm-518-sentra
                     var statusADC = json.ADC;
                     var statusGPIO = json.GPIO;
                     var sMO = json.MO;
+		    var sMT = json.MT;
                     var imei = json.IMEI;
 		    var temp = json.CPU;
 		    var sd = json.DFS;
@@ -498,6 +508,7 @@ https://templatemo.com/tm-518-sentra
 		    document.getElementById("sd").innerHTML = sd;
 		    document.getElementById("date").innerHTML = date;
                     document.getElementById("moget").innerHTML = sMO;
+		    document.getElementById("mtget").innerHTML = sMT;
                     document.getElementById("imei").innerHTML = imei;
 		}
 		else {
@@ -532,6 +543,7 @@ https://templatemo.com/tm-518-sentra
                     document.getElementById("sd").innerHTML = "0";
 		    document.getElementById("date").innerHTML = "0";
                     document.getElementById("moget").innerHTML = "0";
+		    document.getElementById("mtget").innerHTML = "0";
 
 		}
 	    }
